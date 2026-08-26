@@ -1,0 +1,6 @@
+name: gig-platform
+
+include:
+  - compute/core.yml
+  - compute/chat.yml
+  - compute/worker.yml

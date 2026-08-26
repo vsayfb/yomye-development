@@ -1,0 +1,18 @@
+services:
+  chat-svc:
+    build:
+      context: ../../chat-service
+      dockerfile: ./Dockerfile
+    container_name: chat-svc
+    env_file:
+      - ../../chat-service/.env
+    ports:
+      - "8081:8081"
+    expose:
+      - "9100"
+      - "8081"
+
+networks:
+  default:
+    external: true
+    name: gig-platform

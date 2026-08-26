@@ -1,0 +1,5 @@
+name: gig-platform
+
+include:
+  - observability/compose.yml
+

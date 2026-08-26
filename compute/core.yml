@@ -1,0 +1,17 @@
+services:
+  api:
+    container_name: core_svc
+    build:
+      context: ../../core-service
+      dockerfile: ./Dockerfile
+    env_file:
+      - ../../core-service/.env
+    ports:
+      - "8080:8080"
+    expose:
+      - "9100"
+
+networks:
+  default:
+    external: true
+    name: gig-platform

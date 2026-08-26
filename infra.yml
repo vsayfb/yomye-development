@@ -1,0 +1,93 @@
+services:
+  localstack:
+    image: localstack/localstack:4.14.0
+
+    ports:
+      - "4566:4566"
+
+    environment:
+      AWS_DEFAULT_REGION: us-east-1
+      LAMBDA_DOCKER_FLAGS: >-
+        -v ${LAMBDA_PROJECT}/firebase-credentials.json:/etc/localstack/firebase-credentials.json:ro
+      DEBUG: 1
+      LS_LOG: trace
+
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./localstack/init.sh:/etc/localstack/init/ready.d/init.sh
+      - ${LAMBDA_PROJECT}/lambda.zip:/etc/localstack/init/ready.d/lambda/lambda.zip
+      - ${LAMBDA_PROJECT}/.env.example:/etc/localstack/init/ready.d/lambda/.env.example:ro
+      - ${LAMBDA_PROJECT}/firebase-credentials.json:/etc/localstack/firebase-credentials.json:ro
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+      
+  postgres-svc:
+      container_name: postgres-svc
+      build:
+        context: .
+        dockerfile: postgres/Dockerfile
+      environment:
+        POSTGRES_USER: user
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: gigpf
+      ports:
+        - "5432:5432"
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U user -d gigpf"]
+        interval: 5s
+        timeout: 5s
+        retries: 20
+        start_period: 5s
+  
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:9.16
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres-svc:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:8
+    container_name: chat-mongodb
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: [
+          "CMD-SHELL",
+          "mongosh --quiet --eval \"try { rs.status().ok } catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}).ok }\"",
+      ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+volumes:
+  postgres_data:
+  localstack-data:
+  mongo-data:
+  pgadmin_data:
+
+networks:
+  default:
+    external: true
+    name: gig-platform
