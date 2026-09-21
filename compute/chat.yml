@@ -1,16 +1,18 @@
 services:
   chat-svc:
     build:
-      context: ../../chat-service
+      context: ../../chat
       dockerfile: ./Dockerfile
     container_name: chat-svc
     env_file:
-      - ../../chat-service/.env
+      - ../../chat/.env
     ports:
       - "8081:8081"
     expose:
       - "9100"
       - "8081"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 networks:
   default:

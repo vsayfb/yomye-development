@@ -2,14 +2,16 @@ services:
   api:
     container_name: core_svc
     build:
-      context: ../../core-service
+      context: ../../core
       dockerfile: ./Dockerfile
     env_file:
-      - ../../core-service/.env
+      - ../../core/.env
     ports:
       - "8080:8080"
     expose:
       - "9100"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 networks:
   default:
